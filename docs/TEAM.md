@@ -1,7 +1,3 @@
-> *This document serves as a template for writing your team's details.*
-
-> Note that while members of a team may be from different institutions, the team may only compete under **one** of them - and will therefore have to decide which one to compete under in this instance.
-
 # Team Information
 
 ## ⚒️ Team Name
@@ -12,8 +8,8 @@ Password123
 ## 👥 Members
 | Name     | Role                | Institution           | Discord Handle | Email |
 |----------|---------------------|-----------------------| -------------------|-------------|
-| **Aryan Mohanlall**   | TBA   | University of Pretoria | arm002808 | <Aryanmohanlall@gmail.com> |
-| **Ayush Sanjith**   | TBA  | University of Pretoria | agent2904 | <ayushsanjith2@gmail.com> |
+| **Aryan Mohanlall**   | Software Engineer   | University of Pretoria | arm002808 | <Aryanmohanlall@gmail.com> |
+| **Ayush Sanjith**   | Software Engineer  | University of Pretoria | agent2904 | <ayushsanjith2@gmail.com> |
 
 
 ## 🏫 Institution
