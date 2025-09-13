@@ -4,17 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cyber Escape Room</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>Cyber Escape Room</h1>
-  <div id="puzzle"></div>
-  <input type="text" id="answer" placeholder="Your answer">
-  <button onclick="submitAnswer()">Submit</button>
-  <button onclick="getHint()">Hint</button>
+<body class="bg-gray-900 text-white flex flex-col items-center min-h-screen p-6">
 
-  <h3 id="feedback"></h3>
-  <p>XP: <span id="xp">0</span> | Level: <span id="level">1</span> | Streak: <span id="streak">0</span></p>
-  <p>Badges: <span id="badges"></span></p>
+  <h1 class="text-4xl font-bold mb-6 text-blue-400">Cyber Escape Room</h1>
+
+  <div id="puzzle" class="bg-gray-800 p-6 rounded-lg shadow-lg text-xl mb-4 w-full max-w-xl text-center"></div>
+
+  <div class="flex flex-col items-center mb-4 w-full max-w-xl">
+    <input id="answer" type="text" placeholder="Your answer" class="p-2 rounded w-full mb-2 text-black" />
+    <div class="flex gap-2">
+      <button onclick="submitAnswer()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-semibold">Submit</button>
+      <button onclick="getHint()" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded font-semibold">Hint</button>
+    </div>
+  </div>
+
+  <h3 id="feedback" class="text-lg mb-4"></h3>
+
+  <div class="bg-gray-800 p-4 rounded-lg shadow-lg w-full max-w-xl text-center mb-4">
+    <p class="mb-1">XP: <span id="xp">0</span> | Level: <span id="level">1</span> | Streak: <span id="streak">0</span></p>
+    <p>Badges: <span id="badges"></span></p>
+  </div>
 
 <script>
 let currentPuzzleId = 0;
@@ -28,23 +39,36 @@ async function submitAnswer() {
     body: JSON.stringify({ answer, userId })
   });
   const data = await res.json();
+
   document.getElementById("feedback").innerText = data.correct ? data.message : data.hint;
   document.getElementById("xp").innerText = data.xp;
   document.getElementById("level").innerText = data.level;
   document.getElementById("streak").innerText = data.streak;
   document.getElementById("badges").innerText = data.badges.join(', ');
-  if (data.correct) currentPuzzleId++;
+
+  if (data.correct) {
+    currentPuzzleId++;
+    loadPuzzle();
+  }
 }
 
 async function getHint() {
   const res = await fetch(`/check/${currentPuzzleId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ answer: "" , userId})
+    body: JSON.stringify({ answer: "", userId })
   });
   const data = await res.json();
   document.getElementById("feedback").innerText = data.hint;
 }
+
+async function loadPuzzle() {
+  const res = await fetch(`/puzzles/${currentPuzzleId}`);
+  const data = await res.json();
+  document.getElementById("puzzle").innerText = data.question || "No more puzzles!";
+}
+
+loadPuzzle();
 </script>
 </body>
 </html>

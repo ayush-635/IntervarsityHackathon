@@ -40,20 +40,33 @@ function updateUserProgress(userId, correct) {
     users[userId] = { xp: 0, streak: 0, lastSolved: null };
   }
 
+  const user = users[userId];
+
+  if (user.lastSolved) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (new Date(user.lastSolved) < yesterday) {
+      user.streak = 0;
+    }
+  }
+
   if (correct) {
-    users[userId].xp += 10; // +10 XP 
-    if (users[userId].lastSolved === today) {
+    user.xp += 10;
+
+    if (user.lastSolved === today) {
       // Already solved today
     } else {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      if (users[userId].lastSolved === yesterday.toDateString()) {
-        users[userId].streak += 1;
+
+      if (user.lastSolved === yesterday.toDateString()) {
+        user.streak += 1;
       } else {
-        users[userId].streak = 1;
+        user.streak = 1;
       }
+      user.lastSolved = today;
     }
-    users[userId].lastSolved = today;
   }
 }
 
@@ -72,8 +85,6 @@ function getUserBadges(userId) {
 
   return badges;
 }
-
-
 
 app.get("/", (req, res) => res.send("Welcome to the Cyber Escape Room!"));
 
@@ -103,5 +114,14 @@ app.post("/check/:id", async (req, res) => {
 app.get("/game", (req, res) => {
     res.sendFile(path.join(__dirname, "/front end/index.html"));
 });
+
+app.get("/puzzles/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!puzzles[id]) {
+    return res.json({ question: null });
+  }
+  res.json({ question: puzzles[id].question });
+});
+
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
