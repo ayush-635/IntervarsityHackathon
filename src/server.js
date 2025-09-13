@@ -3,7 +3,12 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import puzzles from "./puzzles.js";
+import path from "path"
+import { fileURLToPath } from "url";
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,24 +57,51 @@ function updateUserProgress(userId, correct) {
   }
 }
 
+function getUserLevel(userId) {
+  const xp = users[userId]?.xp || 0;
+  return Math.floor(xp / 50) + 1; // 50 XP per level
+}
+
+function getUserBadges(userId) {
+  const user = users[userId];
+  const badges = [];
+
+  if (user.xp >= 50) badges.push("Puzzle Novice");
+  if (user.xp >= 100) badges.push("Cyber Sleuth");
+  if (user.streak >= 5) badges.push("Consistency Badge");
+
+  return badges;
+}
+
+
+
 app.get("/", (req, res) => res.send("Welcome to the Cyber Escape Room!"));
 
 app.post("/check/:id", async (req, res) => {
   const id = parseInt(req.params.id);
+  const userId = req.body.userId || 'guest';
   const userAnswer = req.body.answer;
 
   if (!puzzles[id]) return res.json({ correct: false, message: "Invalid puzzle" });
 
-  if (userAnswer.toLowerCase() === puzzles[id].answer.toLowerCase()) {
-    return res.json({ correct: true, message: "Correct! Proceed to next room." });
-  }
-  updateUserProgress(req.body.userId || 'guest', isCorrect);
+  const isCorrect = userAnswer.toLowerCase() === puzzles[id].answer.toLowerCase();
 
-  // Call the helper function here
+  updateUserProgress(userId, isCorrect);
+  const level = getUserLevel(userId);
+  const badges = getUserBadges(userId);
+  const streak = users[userId].streak;
+
+  if (isCorrect) {
+    return res.json({ correct: true, message: "Correct! Proceed to next room.", xp: users[userId].xp, level, streak, badges });
+  }
   const hintPrompt = `User failed puzzle: "${puzzles[id].question}". Give a short, friendly hint without revealing the answer.`;
   const hint = await getHint(hintPrompt);
 
-  res.json({ correct: false, hint });
+  res.json({ correct: false, hint, xp: users[userId].xp, level, streak, badges });
+});
+
+app.get("/game", (req, res) => {
+    res.sendFile(path.join(__dirname, "/front end/index.html"));
 });
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));

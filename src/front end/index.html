@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Escape Room</title>
+</head>
+<body>
+  <h1>Cyber Escape Room</h1>
+  <div id="puzzle"></div>
+  <input type="text" id="answer" placeholder="Your answer">
+  <button onclick="submitAnswer()">Submit</button>
+  <button onclick="getHint()">Hint</button>
+
+  <h3 id="feedback"></h3>
+  <p>XP: <span id="xp">0</span> | Level: <span id="level">1</span> | Streak: <span id="streak">0</span></p>
+  <p>Badges: <span id="badges"></span></p>
+
+<script>
+let currentPuzzleId = 0;
+const userId = "guest";
+
+async function submitAnswer() {
+  const answer = document.getElementById("answer").value;
+  const res = await fetch(`/check/${currentPuzzleId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answer, userId })
+  });
+  const data = await res.json();
+  document.getElementById("feedback").innerText = data.correct ? data.message : data.hint;
+  document.getElementById("xp").innerText = data.xp;
+  document.getElementById("level").innerText = data.level;
+  document.getElementById("streak").innerText = data.streak;
+  document.getElementById("badges").innerText = data.badges.join(', ');
+  if (data.correct) currentPuzzleId++;
+}
+
+async function getHint() {
+  const res = await fetch(`/check/${currentPuzzleId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answer: "" , userId})
+  });
+  const data = await res.json();
+  document.getElementById("feedback").innerText = data.hint;
+}
+</script>
+</body>
+</html>
