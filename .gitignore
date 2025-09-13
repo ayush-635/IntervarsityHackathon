@@ -93,6 +93,3 @@ coverage/
 # ==========================
 # Environment / config
 # ==========================
-.env
-.env.local
-.env.*.local

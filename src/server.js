@@ -9,7 +9,6 @@ import bcrypt from "bcrypt";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 dotenv.config();
-//const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,7 +63,9 @@ async function authMiddleware(req, res, next){
     }
 }
 
-app.get("/", (req, res) => res.send("Welcome to the Cyber Escape Room!"));
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "/front end/home.html"));
+});
 
 app.post("/check/:id", authMiddleware, async (req, res) => {
   const user = req.user;
