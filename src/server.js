@@ -106,29 +106,62 @@ function getUserBadges(userId) {
   return badges;
 }
 
+async function authMiddleware(req, res, next){
+    const userId = req.body.userId || req.query.userId;
+    if(!userId){
+        return res.status(401).json({ message: "please login first"});
+    }
+
+    const user = await User.findOne({ username: userId });
+    if(!user){
+        return req.status(401).json({ message: "Invalid user"});
+    }
+
+    req.user = user;
+    next();
+}
+
 app.get("/", (req, res) => res.send("Welcome to the Cyber Escape Room!"));
 
 app.post("/check/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
-  const userId = req.body.userId || 'guest';
-  const userAnswer = req.body.answer;
+  const user = req.user;
+    const id = parseInt(req.params.id);
+    const userAnswer = req.body.answer;
 
-  if (!puzzles[id]) return res.json({ correct: false, message: "Invalid puzzle" });
+    if (!puzzles[id]) return res.json({ correct: false, message: "Invalid puzzle" });
 
-  const isCorrect = userAnswer.toLowerCase() === puzzles[id].answer.toLowerCase();
+    const isCorrect = userAnswer.toLowerCase() === puzzles[id].answer.toLowerCase();
 
-  updateUserProgress(userId, isCorrect);
-  const level = getUserLevel(userId);
-  const badges = getUserBadges(userId);
-  const streak = users[userId].streak;
+    if (isCorrect) {
+        user.xp += 10;
+        const today = new Date().toDateString();
+        if (user.lastSolved?.toDateString() === today) {
+            // already solved today
+        } else {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (user.lastSolved?.toDateString() === yesterday.toDateString()) user.streak += 1;
+            else user.streak = 1;
 
-  if (isCorrect) {
-    return res.json({ correct: true, message: "Correct! Proceed to next room.", xp: users[userId].xp, level, streak, badges });
-  }
-  const hintPrompt = `User failed puzzle: "${puzzles[id].question}". Give a short, friendly hint without revealing the answer.`;
-  const hint = await getHint(hintPrompt);
+            user.lastSolved = new Date();
+        }
+    }
 
-  res.json({ correct: false, hint, xp: users[userId].xp, level, streak, badges });
+    await user.save();
+
+    const badges = [];
+    if (user.xp >= 50) badges.push("Puzzle Novice");
+    if (user.xp >= 100) badges.push("Cyber Sleuth");
+    if (user.streak >= 5) badges.push("Consistency Badge");
+
+    const level = Math.floor(user.xp / 50) + 1;
+
+    if (isCorrect) return res.json({ correct: true, message: "Correct!", xp: user.xp, streak: user.streak, level, badges });
+
+    const hintPrompt = `User failed puzzle: "${puzzles[id].question}". Give a short, friendly hint without revealing the answer.`;
+    const hint = await getHint(hintPrompt);
+
+    res.json({ correct: false, hint, xp: user.xp, streak: user.streak, level, badges });
 });
 
 app.get("/game", (req, res) => {
