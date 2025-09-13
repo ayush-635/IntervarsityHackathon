@@ -13,11 +13,15 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const GEMINI_API_KEY="AIzaSyCtvNELI8SwB2b4IxBLE8iRN3sl_qwip1s"
+const MONGO_URI="mongodb://localhost:27017/cyberEscapeRoom"
+const JWT_SECRET="supersecret123"
 
-mongoose.connect(process.env.MONGO_URI)
+const app = express();
+const PORT = 3000;
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+mongoose.connect(MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB connection error:", err));
 
@@ -53,7 +57,7 @@ async function authMiddleware(req, res, next){
     if (!token) return res.status(401).json({ message: "please login first" });
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findOne({ username: decoded.username });
         if(!user) return res.status(401).json({ message: "Invalid user" });
         req.user = user;
@@ -147,7 +151,7 @@ app.post("/login", async (req, res) =>{
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ message: "Wrong password" });
 
-    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '1d' });
 
     return res.json({ message: "Login successful", token });
 });
