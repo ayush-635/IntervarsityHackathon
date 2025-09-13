@@ -5,6 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import puzzles from "./puzzles.js";
 import path from "path"
 import { fileURLToPath } from "url";
+import bcrypt from "bcrypt"
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -32,6 +33,7 @@ async function getHint(prompt) {
 app.use(bodyParser.json());
 
 let users = {};
+let usersAuth = {};
 
 function updateUserProgress(userId, correct) {
   const today = new Date().toDateString();
@@ -123,5 +125,38 @@ app.get("/puzzles/:id", (req, res) => {
   res.json({ question: puzzles[id].question });
 });
 
+app.post("/register", async(req, res) => {
+    const { username, password } = req.body;
+
+    if(!username || !password){
+        return res.status(400).json({message: "username and password are required"});
+    }
+
+    if(usersAuth[username]){
+        return res.status(400).json({ message: "user exists login please"});
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    usersAuth[username] = { password: hashedPassword, xp: 0, streak: 0, lastSolved: null};
+    users[username] = { xp: 0, streak: 0, lastSolved: null };
+
+    return res.json({message: "user is registered"});
+});
+
+app.post("/login", async (req, res) =>{
+    const { username, password } = req.body;
+
+    const user = usersAuth[username];
+    if(!user){
+        return res.status(400).json({ message: "invalid username or password"});
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if(!match){
+        return res.status(400).json({ message: "wrong password"});
+    }
+
+    return res.json({ message: "successful login", userId: username });
+});
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
