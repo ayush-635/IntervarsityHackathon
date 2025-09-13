@@ -9,7 +9,7 @@ import bcrypt from "bcrypt";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 dotenv.config();
-const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '1d' });
+//const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -146,10 +146,30 @@ app.post("/login", async (req, res) =>{
     const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ message: "Invalid username or password" });
 
-    const match = bcrypt.compare(password, user.password);
+    const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ message: "Wrong password" });
 
-    return res.json({ message: "Login successful", userId: user.username });
+    const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    return res.json({ message: "Login successful", token });
 });
+
+app.get("/me", authMiddleware, async (req, res) => {
+    const user = req.user;
+    res.json({
+        username: user.name,
+        xp: user.xp,
+        streak: user.streak,
+        lastSolved: user.lastSolved
+    });
+});
+
+app.get("/leaderboard", async (req, res) => {
+    const topUsers = await User.find()
+        .sort({xp:-1})
+        .limit(10)
+        .select("username xp streak")
+    req.json(topUsers);
+})
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
