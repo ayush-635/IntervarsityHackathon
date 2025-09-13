@@ -42,4 +42,4 @@ The project was inspired by a desire to make learning cybersecurity and logical 
  6. Integrate analytics to track user progress and highlight areas for learning improvement.
 ```
 
-Demo link : https://docs.google.com/presentation/d/1vZWuDQl5SmYCpTykD7-LauohFt3KaNV4gfgt08I9woY/edit?usp=sharing
+Demo slides link : https://docs.google.com/presentation/d/1vZWuDQl5SmYCpTykD7-LauohFt3KaNV4gfgt08I9woY/edit?usp=sharing
