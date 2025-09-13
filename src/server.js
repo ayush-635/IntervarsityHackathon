@@ -157,7 +157,7 @@ app.post("/login", async (req, res) =>{
 app.get("/me", authMiddleware, async (req, res) => {
     const user = req.user;
     res.json({
-        username: user.name,
+        username: user.username,
         xp: user.xp,
         streak: user.streak,
         lastSolved: user.lastSolved
@@ -169,7 +169,104 @@ app.get("/leaderboard", async (req, res) => {
         .sort({xp:-1})
         .limit(10)
         .select("username xp streak")
-    req.json(topUsers);
-})
+    res.json(topUsers);
+});
+
+const battleQueue = [];
+const battles = {};
+
+function generateBattleId(){
+    return Math.random().toString(36).substr(2, 9);
+}
+
+app.post("/battle/join", authMiddleware, async (req, res) => {
+    const user = req.user;
+
+    if(battleQueue.includes(user.username)){
+        return res.json({ message: "youre already in the queue"});
+    }
+
+    if(battleQueue.length > 0){
+        const opponent = battleQueue.shift();
+        const battleId = generateBattleId();
+        const puzzleId = Math.floor(Math.random()*puzzles.length);
+
+        battles[battleId] = {
+            players: [opponent, user.username],
+            puzzleId,
+            startTime: Date.now(),
+            answers: {},
+        };
+
+        return res.json({
+            message: "battle started",
+            battleId,
+            puzzle: puzzles[puzzleId].question,
+            opponent,
+        });
+    }
+
+    battleQueue.push(user.username);
+    res.json({ message: "Waiting for an opponent"});
+});
+
+app.post("/battle/answer/:battleId", authMiddleware, async (req, res) => {
+    const { battleId } = req.params;
+    const { answer } = req.body;
+    const user = req.user;
+
+    const battle = battles[battleId];
+    if(!battle){
+        return res.status(400).json({ message: "battle not found"});
+    }
+
+    const elapsed = (Date.now()-battle.startTime)/1000;
+    if(elapsed > 60){
+        return res.json({ message: "Time is up"});
+    }
+
+    const correct = answer.toLowerCase() === puzzles[battle.puzzleId].answer.toLowerCase();
+    battle.answers[user.username] = { correct, time: elapsed};
+
+    if(Object.keys(battle.answers).length === 2){
+        const [p1, p2] = battle.players;
+        const a1 = battle.answers[p1];
+        const a2 = battle.answers[p2];
+
+        let winner = null;
+
+        if(a1.correct && a2.correct){
+            winner = a1.time < a2.time ? p1 : p2;
+        } else if(a1.correct){
+            winner = p1;
+        } else if (a2.correct){
+            winner = p2;
+        }
+
+        if(winner){
+            const winningUser = await User.findOne({ username: winner});
+            winningUser.xp +=25;
+            await winningUser.save();
+        }
+
+        delete battles[battleId];
+        return res.json({ message: "battle is now finished", winner, answers: battle.answers });        
+    }
+    res.json({ message: "answer received, waiting for opponent"});
+});
+
+app.get("/battle/status/:battleId", authMiddleware, (req, res) => {
+    const { battleId } = req.params;
+    const battle= battles[battleId];
+    if(!battle){
+        return res.status(400).json({ message: "battle not found"});
+    }
+
+    res.json({
+        players: battle.players,
+        puzzleId: battle.puzzleId,
+        elapsed: (Date.now() - battle.startTime)/1000,
+    });
+});
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
