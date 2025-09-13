@@ -1,42 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cyber Escape Room</title>
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber Escape Room</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center min-h-screen p-6">
 
   <h1 class="text-4xl font-bold mb-6 text-blue-400">Cyber Escape Room</h1>
-
-  <div id="puzzle" class="bg-gray-800 p-6 rounded-lg shadow-lg text-xl mb-4 w-full max-w-xl text-center"></div>
-
-  <div class="flex flex-col items-center mb-4 w-full max-w-xl">
-    <input id="answer" type="text" placeholder="Your answer" class="p-2 rounded w-full mb-2 text-black" />
+  <div id="auth-section" class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md mb-6">
+    <h2 class="text-xl font-bold mb-4">Login / Register</h2>
+    <input id="auth-username" type="text" placeholder="Username" class="p-2 rounded w-full mb-2 text-black">
+    <input id="auth-password" type="password" placeholder="Password" class="p-2 rounded w-full mb-4 text-black">
     <div class="flex gap-2">
-      <button onclick="submitAnswer()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-semibold">Submit</button>
-      <button onclick="getHint()" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded font-semibold">Hint</button>
+      <button onclick="register()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded font-semibold">Register</button>
+      <button onclick="login()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-semibold">Login</button>
     </div>
+    <p id="auth-feedback" class="text-red-400 mt-2"></p>
   </div>
+  <div id="game-section" class="hidden flex flex-col items-center w-full max-w-xl">
+    <div id="puzzle" class="bg-gray-800 p-6 rounded-lg shadow-lg text-xl mb-4 w-full text-center"></div>
 
-  <h3 id="feedback" class="text-lg mb-4"></h3>
+    <div class="flex flex-col items-center mb-4 w-full">
+      <input id="answer" type="text" placeholder="Your answer" class="p-2 rounded w-full mb-2 text-black" />
+      <div class="flex gap-2">
+        <button onclick="submitAnswer()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-semibold">Submit</button>
+        <button onclick="getHint()" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded font-semibold">Hint</button>
+      </div>
+    </div>
 
-  <div class="bg-gray-800 p-4 rounded-lg shadow-lg w-full max-w-xl text-center mb-4">
-    <p class="mb-1">XP: <span id="xp">0</span> | Level: <span id="level">1</span> | Streak: <span id="streak">0</span></p>
-    <p>Badges: <span id="badges"></span></p>
+    <h3 id="feedback" class="text-lg mb-4"></h3>
+
+    <div class="bg-gray-800 p-4 rounded-lg shadow-lg w-full text-center mb-4">
+      <p class="mb-1">XP: <span id="xp">0</span> | Level: <span id="level">1</span> | Streak: <span id="streak">0</span></p>
+      <p>Badges: <span id="badges"></span></p>
+    </div>
+    <div class="bg-gray-800 p-4 rounded-lg shadow-lg w-full text-center mb-4">
+      <h2 class="text-lg font-bold mb-2">Leaderboard</h2>
+      <ul id="leaderboard"></ul>
+    </div>
+
+    <div class="bg-gray-800 p-4 rounded-lg shadow-lg w-full text-center">
+      <h2 class="text-lg font-bold mb-2">1v1 Battle</h2>
+      <button onclick="joinBattle()" class="bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded font-semibold mb-2">Join Queue</button>
+      <p id="battle-status" class="mb-2"></p>
+      <div id="battle-question" class="text-xl font-semibold mb-2"></div>
+      <input id="battle-answer" type="text" placeholder="Battle answer" class="p-2 rounded w-full mb-2 text-black" />
+      <button onclick="submitBattleAnswer()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded font-semibold">Submit Battle Answer</button>
+    </div>
   </div>
 
 <script>
 let currentPuzzleId = 0;
-const userId = "guest";
+let token = null;
+let currentBattleId = null;
+
+async function register() {
+  const username = document.getElementById("auth-username").value;
+  const password = document.getElementById("auth-password").value;
+
+  const res = await fetch("/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  document.getElementById("auth-feedback").innerText = data.message;
+}
+
+async function login() {
+  const username = document.getElementById("auth-username").value;
+  const password = document.getElementById("auth-password").value;
+  
+
+  const res = await fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+
+  if (data.token) {
+    token = data.token;
+    const meRes = await fetch("/me", { headers: { "Authorization": "Bearer " + token } });
+    const meData = await meRes.json();
+    localStorage.setItem("username", meData.username);
+    document.getElementById("auth-section").classList.add("hidden");
+    document.getElementById("game-section").classList.remove("hidden");
+    loadPuzzle();
+    loadLeaderboard();
+  } else {
+    document.getElementById("auth-feedback").innerText = data.message;
+  }
+}
 
 async function submitAnswer() {
   const answer = document.getElementById("answer").value;
   const res = await fetch(`/check/${currentPuzzleId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ answer, userId })
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify({ answer })
   });
   const data = await res.json();
 
@@ -44,19 +108,20 @@ async function submitAnswer() {
   document.getElementById("xp").innerText = data.xp;
   document.getElementById("level").innerText = data.level;
   document.getElementById("streak").innerText = data.streak;
-  document.getElementById("badges").innerText = data.badges.join(', ');
+  document.getElementById("badges").innerText = data.badges.join(", ");
 
   if (data.correct) {
     currentPuzzleId++;
     loadPuzzle();
+    loadLeaderboard();
   }
 }
 
 async function getHint() {
   const res = await fetch(`/check/${currentPuzzleId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ answer: "", userId })
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify({ answer: "" })
   });
   const data = await res.json();
   document.getElementById("feedback").innerText = data.hint;
@@ -68,7 +133,136 @@ async function loadPuzzle() {
   document.getElementById("puzzle").innerText = data.question || "No more puzzles!";
 }
 
-loadPuzzle();
+async function loadLeaderboard() {
+  const res = await fetch("/leaderboard");
+  const data = await res.json();
+  const lb = document.getElementById("leaderboard");
+  lb.innerHTML = "";
+  data.forEach((u, i) => {
+    const li = document.createElement("li");
+    li.innerText = `${i+1}. ${u.username} - ${u.xp} XP (Streak: ${u.streak})`;
+    lb.appendChild(li);
+  });
+}
+
+let battleStartTime = null;
+let battleTimeLeft = 60;
+let battleScores = {};
+
+async function joinBattle() {
+    const res = await fetch("/battle/join", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token }
+    });
+    const data = await res.json();
+    document.getElementById("battle-status").innerText = data.message;
+
+    if (data.battleId) {
+        startBattle(data);
+    } else if (data.waiting) {
+        const interval = setInterval(async () => {
+            const pendingRes = await fetch("/battle/pending", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            const pendingData = await pendingRes.json();
+            if (pendingData.started) {
+                clearInterval(interval);
+                startBattle(pendingData);
+            }
+        }, 2000);
+    }
+}
+
+function startBattle(data) {
+    currentBattleId = data.battleId;
+    battleStartTime = Date.now();
+    battleScores = data.scores || {};
+    document.getElementById("battle-question").innerText = data.puzzle;
+    startBattleTimer();
+    pollBattleStatus();
+}
+
+async function submitBattleAnswer() {
+  if (!currentBattleId) {
+    document.getElementById("battle-status").innerText = "No active battle!";
+    return;
+  }
+
+  const answer = document.getElementById("battle-answer").value;
+  if (!answer) return;
+
+  const res = await fetch(`/battle/answer/${currentBattleId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify({ answer })
+  });
+  const data = await res.json();
+  document.getElementById("battle-answer").value = "";
+
+  if (data.scores) {
+    battleScores = data.scores;
+    updateBattleScores();
+  }
+
+  if (data.nextPuzzle) {
+    document.getElementById("battle-question").innerText = data.nextPuzzle;
+  }
+
+  if (data.winner) {
+    document.getElementById("battle-status").innerText = `Battle Finished! Winner: ${data.winner || "Draw"}`;
+    document.getElementById("battle-question").innerText = "";
+    clearInterval(battleTimerInterval);
+    currentBattleId = null;
+    loadLeaderboard();
+  } else {
+    document.getElementById("battle-status").innerText = data.message;
+  }
+}
+
+function updateBattleScores() {
+    const username = localStorage.getItem("username");
+    if (!username) return;
+    const opponent = Object.keys(battleScores).find(u => u !== username);
+    document.getElementById("battle-status").innerText = 
+        `Scores - You: ${battleScores[username] || 0} | Opponent: ${battleScores[opponent] || 0}`;
+}
+
+let battleTimerInterval;
+function startBattleTimer() {
+  battleTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - battleStartTime) / 1000);
+    battleTimeLeft = 60 - elapsed;
+    if (battleTimeLeft <= 0) {
+      clearInterval(battleTimerInterval);
+      document.getElementById("battle-status").innerText += " | Time's up!";
+      submitBattleAnswer();
+      return;
+    }
+    document.getElementById("battle-status").innerText = 
+        `Time left: ${battleTimeLeft}s | ${document.getElementById("battle-status").innerText.split('|')[1] || ''}`;
+  }, 1000);
+}
+
+async function pollBattleStatus() {
+  if (!currentBattleId) return;
+  const res = await fetch(`/battle/status/${currentBattleId}`, {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const data = await res.json();
+  if (data.puzzle) document.getElementById("battle-question").innerText = data.puzzle;
+  if (data.scores) {
+    battleScores = data.scores;
+    updateBattleScores();
+  }
+  if (!data.finished) setTimeout(pollBattleStatus, 2000);
+}
+
+async function getUsername() {
+  const res = await fetch("/me", { headers: { "Authorization": "Bearer " + token } });
+  const data = await res.json();
+  localStorage.setItem("username", data.username);
+  return data.username;
+}
 </script>
 </body>
 </html>

@@ -4,7 +4,7 @@ const puzzles = [
   { question: "Which of these is a phishing red flag? a) Grammar mistakes b) Correct spelling", answer: "a" },
   { question: "Decode this Caesar cipher: 'khoor'", answer: "hello" },
   { question: "What is the strongest password: a) 12345 b) P@ssw0rd!23", answer: "b" },
-  { question: "Identify the fake email: contains suspicious link or unusual sender?", answer: "suspicious link" },
+  { question: "Identify the fake email: contains suspicious link or unusual sender?", answer: "contains suspicious link" },
   { question: "Complete the sequence: 2, 4, 8, ?", answer: "16" }
 ];
 
