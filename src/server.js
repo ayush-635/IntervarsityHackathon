@@ -5,7 +5,8 @@ import { GoogleGenAI } from "@google/genai";
 import puzzles from "./puzzles.js";
 import path from "path"
 import { fileURLToPath } from "url";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
+import mongoose from "mongoose";
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +15,23 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.logg("MongoDB connected"))
+.catch(err => console.error("mongodb didnt connect", err));
+
+const userSchema = new mongoose.Schema({
+    username: {type: String, unique: true },
+    password: String,
+    xp: { type: Number, default: 0},
+    streak: { type: Number, default: 0},
+    lastSolved: {type: Date, default: null}
+});
+
+export const User = mongoose.model("User", userSchema);
 
 async function getHint(prompt) {
   try {
@@ -132,31 +150,27 @@ app.post("/register", async(req, res) => {
         return res.status(400).json({message: "username and password are required"});
     }
 
-    if(usersAuth[username]){
-        return res.status(400).json({ message: "user exists login please"});
+    const exists = await User.findOne({ username });
+    if(exists){
+        return res.status(400).json({ message: "user exists please login"});
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    usersAuth[username] = { password: hashedPassword, xp: 0, streak: 0, lastSolved: null};
-    users[username] = { xp: 0, streak: 0, lastSolved: null };
+    const newUser = new User({ username, password: hashedPassword});
+    await newUser.save();
 
     return res.json({message: "user is registered"});
 });
 
 app.post("/login", async (req, res) =>{
     const { username, password } = req.body;
-
-    const user = usersAuth[username];
-    if(!user){
-        return res.status(400).json({ message: "invalid username or password"});
-    }
+    const user = await User.findOne({ username });
+    if (!user) return res.status(400).json({ message: "Invalid username or password" });
 
     const match = await bcrypt.compare(password, user.password);
-    if(!match){
-        return res.status(400).json({ message: "wrong password"});
-    }
+    if (!match) return res.status(400).json({ message: "Wrong password" });
 
-    return res.json({ message: "successful login", userId: username });
+    return res.json({ message: "Login successful", userId: user.username });
 });
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
