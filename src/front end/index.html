@@ -264,5 +264,35 @@ async function getUsername() {
   return data.username;
 }
 </script>
+<div class="bg-gray-800 p-4 rounded-lg shadow-lg w-full text-center mb-4">
+  <h2 class="text-lg font-bold mb-2">Your Profile</h2>
+  <button onclick="showProfile()" class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded font-semibold mb-2">
+    View Profile
+  </button>
+  <div id="profile-info" class="text-left mt-2"></div>
+</div>
+<script>
+  async function showProfile() {
+    if (!token) {
+        alert("Please login first!");
+        return;
+    }
+
+    const res = await fetch("/me", {
+        headers: { "Authorization": "Bearer " + token }
+    });
+    const data = await res.json();
+
+    const profileDiv = document.getElementById("profile-info");
+    profileDiv.innerHTML = `
+        <p><strong>Username:</strong> ${data.username}</p>
+        <p><strong>XP:</strong> ${data.xp}</p>
+        <p><strong>Level:</strong> ${Math.floor(data.xp / 50) + 1}</p>
+        <p><strong>Streak:</strong> ${data.streak}</p>
+        <p><strong>Last Solved:</strong> ${data.lastSolved ? new Date(data.lastSolved).toLocaleString() : "Never"}</p>
+    `;
+}
+
+</script>
 </body>
 </html>
