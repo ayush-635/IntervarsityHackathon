@@ -13,20 +13,25 @@ This document lists all **third-party repositories, modules, libraries, framewor
 ## 📦 Libraries, Frameworks & Submodules
 | Name                 | Link / Repo                                           | Author(s)       | Usage                  |
 |----------------------|-------------------------------------------------------|-----------------|------------------------|
-| IntricatePointers    | https://github.com/DnA-IntRicate/IntricatePointers    | Adam Foflonker  | Memory management      |
-| fast_obj             | https://github.com/thisistherk/fast_obj               | Richard Knight  | Parsing OBJ files      |
+| Express.js           | https://expressjs.com/    | Adam Foflonker  | OpenJS Foundation      |Web server & routing framework
+| Mongoose             | https://mongoosejs.com/               | Automattic  | MongoDB object modeling & queries      |
+| bcrypt               | https://github.com/kelektiv/node.bcrypt.js | Kelektiv | Password hashing |
+| jsonwebtoken         | https://github.com/auth0/node-jsonwebtoken | Auth0 | JWT authentication & token handling|
+| dotenv               | https://github.com/motdotla/dotenv         | Motdotla | Environment variable management|
+| body-parser          | https://github.com/expressjs/body-parser   | Express.js team | Middleware for parsing JSON requests |
+| TailwindCSS          | https://tailwindcss.com/                   | Tailwind Labs| Frontend styling |
 
 ---
 
 ## 🌐 APIs & Services
 | Name          | Link / Docs                        | Author(s)      | Usage                             |
 |---------------|------------------------------------|----------------|-----------------------------------|
-| OpenWeather   | https://openweathermap.org/api     | Open Weather   | Fetching weather data             |
-| Stripe        | https://stripe.com/docs/api        | Stripe         | Payment handling                  |
+| Google Gemini   | https://ai.google.dev/    | Google DeepMind   | Generating hints dynamically             |
+| MongoDB        | https://www.mongodb.com/docs/manual/        | MongoDB Inc.         | Database for storing user data                  |
 
 ---
 
 ## 📊 Datasets
 | Name          | Source                              | Usage                             |
 |---------------|-------------------------------------|-----------------------------------|
-| MNIST         | http://yann.lecun.com/exdb/mnist/   | Training/testing machine learning |
+| Custom Puzzles         | Self-created (puzzles.js)   | Questions and answers for the game |
