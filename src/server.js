@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
 });
 
 export const User = mongoose.model("User", userSchema);
+
+app.use('/assets', express.static('assets'));
+app.use("/assets", express.static(path.join(process.cwd(), "assets")));
+app.use(express.static(path.join(process.cwd(), "src/frontend")));
 
 async function getHint(prompt) {
   try {
