@@ -43,3 +43,7 @@ The project was inspired by a desire to make learning cybersecurity and logical 
 ```
 
 Demo slides link : https://docs.google.com/presentation/d/1vZWuDQl5SmYCpTykD7-LauohFt3KaNV4gfgt08I9woY/edit?usp=sharing
+
+Demo video link : https://drive.google.com/file/d/1xi8jLJJ3SuDA2u94yaYqXrvTp5VGxeOy/view?usp=drive_link
+
+Demo video link : https://youtu.be/Zr0G8hnk7do
